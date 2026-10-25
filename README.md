@@ -44,7 +44,7 @@ Open a new terminal after installation and check:
 py -3.12 --version
 ```
 
-**Both GitHub’s “Download ZIP” and `terrarium-windows.zip` now include the same verified built dashboard.** No Node.js build is needed for a complete download. The launcher checks source and output fingerprints so an older dashboard cannot silently survive an update.
+**Both GitHub’s “Download ZIP” and `terrarium-windows.zip` now include the same verified built dashboard.** No Node.js build is needed for a complete download. Setup checks source and output fingerprints. Start stays separate: it never installs dependencies, rebuilds, or runs setup.
 
 ### 2. Get the project
 
@@ -57,8 +57,8 @@ Alternatively, use GitHub **Code → Download ZIP** and extract it completely. K
 
 ### 3. Install and start
 
-1. Double-click **`Start-Terrarium.cmd`**. It automatically runs setup if this extracted folder has no working Python environment or has an outdated dashboard. First setup requires internet access. You can also run `Setup-Windows.cmd` explicitly.
-2. Leave the server window open. It prints the installation folder and dashboard build ID; make sure this is the folder you intended to launch. Setup performed in a different extracted folder does not install this one.
+1. On a new installation, run **`Setup-Windows.cmd`** once and wait for **Setup complete**. Setup installs dependencies and verifies the dashboard; internet access is required for initial installation.
+2. For daily use, double-click **`Start-Terrarium.cmd`** and leave its server window open. Start only launches this folder’s server: it never calls Setup, pip, npm, or the full build verifier. Setup performed in a different extracted folder does not install this one.
 3. Open **http://127.0.0.1:8000** in Edge or Chrome on that same computer.
 
 You should see the habitat with four residents. Profit values remain blank until a paper account and ledger have real values. Follow the first-session steps below before starting trading.
@@ -155,7 +155,7 @@ Scheduled trading refreshes historical prices when it needs a new daily plan. If
 | **Music** | Choose **Soft jazz** or **Quiet piano**, then adjust volume. Preferences are saved; playback starts paused after reload. |
 | Help icon | Read the workspace's field notes and behavior explanations. |
 
-Off-duty routines are independent and staggered. They run only while the market is closed and the resident has no active order. An open market, active order, or stale server status returns the frog to its desk. The disconnected preview uses current server time and regular New York weekday hours, ignoring old saved market flags and trading errors. A connected preview requires a fresh broker clock; holidays and early closes follow that clock.
+Off-duty routines are independent and staggered. They run only while the market is closed and the resident has no active order. An open market, active order, or stale server status returns the frog to its desk. A fresh broker clock takes priority. If that clock is unavailable, current server time enables off-duty preview outside regular New York weekday hours, whether or not API keys are saved. Unknown weekday sessions remain at the desks; holidays and early closes within those hours require a fresh broker clock. The **Residents at work** card explains whether resting routines are enabled or waiting.
 
 [Full screenshot gallery: every screen, all four desks and camera views, music, mobile, and resting routines →](docs/gallery.md)
 
@@ -177,14 +177,14 @@ The application has automated tests for research and broker accounting, but auth
 git pull --ff-only
 ```
 
-On Windows, run the updated `Start-Terrarium.cmd`. It verifies the included dashboard and repairs missing setup automatically. If you changed frontend source locally, install Node.js and rebuild:
+On Windows, run `Setup-Windows.cmd` separately if dependencies need updating, then use `Start-Terrarium.cmd` for daily launches. Start never performs setup. If you changed frontend source locally, install Node.js and rebuild:
 
 ```powershell
 npm.cmd --prefix frontend ci
 npm.cmd --prefix frontend run build
 ```
 
-An existing `index.html` alone is no longer accepted: source and asset fingerprints must match. On macOS/Linux, rerun `bash scripts/setup.sh`, which rebuilds it. Restart the server and hard-refresh the browser with **Ctrl+F5** on Windows or **Cmd+Shift+R** on macOS.
+Setup verifies source and asset fingerprints; ordinary Start launches skip this full verification. On macOS/Linux, rerun `bash scripts/setup.sh`, which rebuilds it. Restart the server and hard-refresh the browser with **Ctrl+F5** on Windows or **Cmd+Shift+R** on macOS.
 
 **From the prepared cumulative ZIP:** stop the server, extract to a temporary folder, and follow its `READ-ME-FIRST.txt`. For this startup fix, copy `frontend`, `backend`, `scripts`, `Start-Terrarium.cmd`, `Setup-Windows.cmd`, `requirements.lock`, `pyproject.toml`, and `.python-version` into the existing installation and replace matching files. Keep your existing `data`, `reports`, Python environment, and keys. The bundle already includes the built frontend.
 
@@ -198,7 +198,7 @@ Local market data, research reports, credentials, and the paper ledger are exclu
 | `npm` not found or setup cannot build | Install Node.js 22.12+ and reopen the terminal. Use `npm.cmd` in PowerShell. |
 | Port 8000 is already in use | Check whether another Terrarium server is still running. Use one server instance per ledger. |
 | Page does not open | Keep the server window open; use `http://127.0.0.1:8000` on that same computer. |
-| Old dashboard or no resting routines after an update | Close old server windows, run the updated launcher from the intended folder, and press Ctrl+F5. The launcher checks the build. Resting begins after a short staggered delay while the market is closed. |
+| Old dashboard or no resting routines after an update | Close old server windows, run the updated launcher from the intended folder, and press Ctrl+F5. Check the status below **Residents at work**. Off-hours preview works even if saved API credentials have no fresh broker clock. Use Setup separately to verify a copied build. |
 | Market closed | Enable the daily schedule after connecting; wait for the next exchange session. |
 | Connection rejected | Verify paper-mode keys, account status, and that the ledger belongs to that account. |
 | Historical download or freshness error | Check internet/provider availability; rerun the lab and read the error before starting. |

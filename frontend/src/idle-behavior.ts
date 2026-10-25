@@ -46,11 +46,19 @@ export class IdleDirector {
  }
 }
 
-/** Decide decorative resting separately from persisted trading error/state. */
-export function offDutyAllowed(state:{credentials_present:boolean;market_open:boolean;market_clock_fresh?:boolean;server_time?:string},fallbackNow=new Date()):boolean {
- if(state.credentials_present)return state.market_clock_fresh===true&&!state.market_open;
- // A disconnected ledger can retain Friday's open flag or a past trading error.
- // Use current server time for preview, never that saved flag or the laptop's timezone.
+/** Fresh broker state wins; otherwise regular-hours preview works with or without keys.
+ * This never authorizes an order. Individual active-order and API freshness guards
+ * remain in Habitat/IdleDirector, and unknown weekday sessions stay at the desk.
+ */
+export type RestingState={credentials_present:boolean;market_open:boolean;market_clock_fresh?:boolean;server_time?:string};
+export function restingStatus(state:RestingState,fallbackNow=new Date()):{allowed:boolean;label:string}{
+ if(state.market_clock_fresh===true)return state.market_open
+  ?{allowed:false,label:'Market open · at the desks'}
+  :{allowed:true,label:'Market closed · routines enabled'};
  const now=state.server_time?new Date(state.server_time):fallbackNow;
- return Number.isFinite(now.getTime())&&outsideRegularSession(now);
+ if(Number.isFinite(now.getTime())&&outsideRegularSession(now))return {allowed:true,label:'Off hours · routines enabled'};
+ return {allowed:false,label:state.credentials_present?'Waiting for the market clock':'Market hours · at the desks'};
+}
+export function offDutyAllowed(state:RestingState,fallbackNow=new Date()):boolean {
+ return restingStatus(state,fallbackNow).allowed;
 }

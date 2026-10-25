@@ -43,7 +43,7 @@ def main():
 This ZIP includes the latest application and all previous habitat changes.
 Future releases replace this same terrarium-windows.zip download.
 
-EXISTING INSTALLATION - STARTUP AND ANIMATION FIX:
+EXISTING INSTALLATION - SEPARATE SETUP AND DESKTOP RESTING FIX:
 1. Close the Terrarium server window.
 2. Extract this ZIP to a temporary folder.
 3. Copy frontend, backend, and scripts plus Setup-Windows.cmd,
@@ -52,13 +52,13 @@ EXISTING INSTALLATION - STARTUP AND ANIMATION FIX:
 4. Keep your existing data and reports folders, Python environment, and keys.
    Do not overwrite them with the bundled starter research.
 5. Run the UPDATED Start-Terrarium.cmd and press Ctrl+F5 in your browser.
-   It checks this folder and runs setup automatically only when repair is needed.
+   Start only launches the server. It never runs Setup, pip, or npm.
    Reconnect paper keys after restarting. Do not copy a .venv from another folder
    or computer. Close old server windows so port 8000 serves this installation.
 
 FIRST INSTALLATION:
 Extract the whole tradingbotv4 folder, install Python 3.12 with its Windows
-launcher, and run Start-Terrarium.cmd. It runs setup on the first launch.
+launcher, run Setup-Windows.cmd once, then use Start-Terrarium.cmd for daily launches.
 Both this ZIP and the GitHub source ZIP include the verified built dashboard;
 Node.js is only needed when changing source or repairing a mismatched build.
 See docs/windows-quickstart.md for details.

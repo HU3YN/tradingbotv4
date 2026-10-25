@@ -40,10 +40,27 @@ test('disconnected restart ignores saved open flags and uses server time, not th
  for(let i=0;i<150;i++)director.step(.1,offDutyAllowed(weekend),[false,false,false,false]);
  assert.ok(director.residents.some(r=>r.action!=='desk'));
 });
-test('connected preview requires a fresh broker clock; a prior trading error does not override a closed clock',()=>{
- const connected={credentials_present:true,market_open:false,market_clock_fresh:true,error:'Previous order error'};
+test('fresh broker state wins, including holidays and an open clock outside fallback hours',()=>{
+ const connected={credentials_present:true,market_open:false,market_clock_fresh:true,error:'Previous order error',server_time:'2026-10-26T15:00:00Z'};
  assert.equal(offDutyAllowed(connected),true);
  assert.equal(offDutyAllowed({...connected,market_open:true}),false);
+ assert.equal(offDutyAllowed({...connected,market_open:true,server_time:'2026-10-25T16:00:00Z'}),false);
  assert.equal(offDutyAllowed({...connected,market_clock_fresh:false}),false);
  assert.equal(offDutyAllowed({...connected,market_clock_fresh:undefined}),false);
+});
+test('stored desktop credentials cannot suppress off-hours routines when the laptop has no keys',()=>{
+ for(const server_time of ['2026-10-25T16:00:00Z','2026-10-26T21:00:00Z','2026-11-02T13:00:00Z']){
+  const base={market_open:false,market_clock_fresh:false,server_time};
+  const laptop=offDutyAllowed({...base,credentials_present:false});
+  const desktop=offDutyAllowed({...base,credentials_present:true});
+  assert.equal(laptop,true);assert.equal(desktop,laptop);
+  const director=new IdleDirector(random()),seen=new Set();
+  for(let i=0;i<10000;i++){
+   const states=director.step(.1,desktop,[true,false,false,false]);
+   assert.equal(states[0].action,'desk');
+   states.slice(1).forEach(s=>seen.add(s.action));
+  }
+  assert.deepEqual([...seen].sort(),['coffee','desk','hunt','sleep','stretch']);
+ }
+ assert.equal(offDutyAllowed({credentials_present:true,market_open:false,server_time:'invalid'}),false);
 });

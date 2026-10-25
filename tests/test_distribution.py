@@ -40,3 +40,15 @@ def test_legacy_dist_and_cross_platform_line_endings(tmp_path):
     assert checker.check_frontend(root)[0]
     (root/'frontend/dist/build-info.json').unlink()
     assert not checker.check_frontend(root)[0]
+
+
+def test_windows_start_never_installs_or_runs_setup():
+    # Inspect executable batch lines, excluding user-facing setup instructions.
+    commands=[line.strip().lower() for line in (ROOT/'Start-Terrarium.cmd').read_text().splitlines()
+              if line.strip() and not line.strip().lower().startswith(('echo ', 'echo.', 'rem ', ':'))]
+    assert not any('setup-windows.cmd' in line or 'pip install' in line or 'npm' in line for line in commands)
+    assert not any('check_frontend.py' in line or 'import numpy' in line for line in commands)
+    assert any('-m uvicorn pond.api:app --app-dir' in line for line in commands)
+    setup=(ROOT/'Setup-Windows.cmd').read_text().lower()
+    assert '-m pip install -r requirements.lock' in setup
+    assert 'scripts\\check_frontend.py' in setup

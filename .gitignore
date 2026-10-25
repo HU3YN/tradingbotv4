@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+.pytest_cache/
+node_modules/
+frontend/dist/
+.env
+.env.*
+!.env.example
+data/*
+!data/.gitkeep
+reports/*
+!reports/.gitkeep
+*.sqlite*
+*.log
+
+.npm-cache/
+*.egg-info/

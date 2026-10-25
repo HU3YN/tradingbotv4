@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 import { fileURLToPath } from 'node:url';
 const compiled=await build({entryPoints:[fileURLToPath(new URL('./src/idle-behavior.ts',import.meta.url))],bundle:true,write:false,platform:'node',format:'esm'});
-const {IdleDirector,outsideRegularSession}=await import('data:text/javascript;base64,'+Buffer.from(compiled.outputFiles[0].text).toString('base64'));
+const {IdleDirector,outsideRegularSession,offDutyAllowed}=await import('data:text/javascript;base64,'+Buffer.from(compiled.outputFiles[0].text).toString('base64'));
 function random(seed=24){return()=>{seed=(seed*1664525+1013904223)>>>0;return seed/2**32;};}
 test('closed-session preview handles New York time, DST, and session boundaries',()=>{
  for(const date of ['2026-10-24T15:00:00Z','2026-10-26T13:29:00Z','2026-10-26T20:00:00Z','2026-11-02T14:29:00Z'])assert.equal(outsideRegularSession(new Date(date)),true,date);
@@ -29,4 +29,21 @@ test('market open, missing status, and active orders prevent or interrupt play',
  director.step(.1,true,[true,false,false,false]);assert.equal(director.residents[0].action,'desk');assert.equal(director.residents[1].action,'sleep');
  director.step(.1,false,[false,false,false,false]);assert.ok(director.residents.every(r=>r.action==='desk'));
  for(let i=0;i<2000;i++)director.step(.1,true,[]);assert.ok(director.residents.every(r=>r.action==='desk'));
+});
+
+test('disconnected restart ignores saved open flags and uses server time, not the local clock',()=>{
+ const weekend={credentials_present:false,market_open:true,market_clock_fresh:false,server_time:'2026-10-24T16:00:00Z',error:'Old trading error'};
+ assert.equal(offDutyAllowed(weekend,new Date('2026-10-26T15:00:00Z')),true);
+ assert.equal(offDutyAllowed({...weekend,server_time:'2026-10-26T15:00:00Z'},new Date('2026-10-24T16:00:00Z')),false);
+ assert.equal(offDutyAllowed({...weekend,server_time:'invalid'}),false);
+ const director=new IdleDirector(random());
+ for(let i=0;i<150;i++)director.step(.1,offDutyAllowed(weekend),[false,false,false,false]);
+ assert.ok(director.residents.some(r=>r.action!=='desk'));
+});
+test('connected preview requires a fresh broker clock; a prior trading error does not override a closed clock',()=>{
+ const connected={credentials_present:true,market_open:false,market_clock_fresh:true,error:'Previous order error'};
+ assert.equal(offDutyAllowed(connected),true);
+ assert.equal(offDutyAllowed({...connected,market_open:true}),false);
+ assert.equal(offDutyAllowed({...connected,market_clock_fresh:false}),false);
+ assert.equal(offDutyAllowed({...connected,market_clock_fresh:undefined}),false);
 });

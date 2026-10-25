@@ -21,3 +21,13 @@ The current application was captured across the desktop dashboard, strategy lab,
 This update changes documentation and screenshot assets, with an application-source hash comparison to verify that runtime code and existing tests remain unchanged. Music playback, looping, volume, track-switch races, preferences, recovery, and mobile controls were checked in the preceding implementation update; see [music notes](music.md).
 
 Publication checks: **52 backend tests and 9 animation/rendering unit tests passed**. Documentation links and all 21 screenshot references were checked. The backend run retained the known Starlette test-client deprecation warning.
+
+## Startup, distribution, and resting-animation regression fix
+
+The original GitHub archive omitted `frontend/dist`; the chat bundle contained it. The tracked source was identical between those distributions. Setup previously accepted any existing `index.html`, so an older build could remain in use. A saved open-market flag or historical trading error could also suppress closed-market routines.
+
+The GitHub archive now includes the verified build. A source/output manifest rejects stale or incomplete builds, and the Windows launcher repairs missing setup in the current extracted folder. Launchers explicitly select that folder's backend, avoiding a different editable installation. Resting uses current server time for disconnected preview and a process-local fresh broker clock for connected accounts. Trading errors remain visible; orders and risk controls are unchanged.
+
+Validation: **56 backend/distribution tests and 11 animation/rendering tests passed**. A clean Git archive was extracted without Node modules or historical caches, its build verified, and its backend served using the existing Python runtime with an explicit app directory. Browser checks confirmed routines with an old saved open flag/error, fresh-open interruption, fresh-closed recovery, active-order blocking, stale-clock blocking, offline blocking, and narrow-screen controls. No trading requests were sent. The browser pose check also exercised 128 sleep/coffee/hunt/stretch poses, confirmed finite transforms and correct props, and verified open-market and stale-status resets. A second Windows ZIP was successfully packaged from that clean archive without including its ledger.
+
+Windows batch scripts have not been executed on a native Windows machine here. The user's laptop/desktop Downloads folders are not accessible from this cloud workspace; comparison used the exact previously supplied chat ZIP.

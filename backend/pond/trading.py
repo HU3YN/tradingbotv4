@@ -1,5 +1,5 @@
 """Durable four-agent paper controller with serialized, idempotent order intents."""
-import hashlib,json,os,sqlite3,threading
+import hashlib,json,os,sqlite3,threading,time
 from datetime import datetime
 from decimal import Decimal,ROUND_DOWN
 from zoneinfo import ZoneInfo
@@ -14,6 +14,7 @@ class Controller:
     def __init__(self,path=None,broker_factory=Alpaca):
         self.path=path or ROOT/'data/paper.sqlite'; self.path.parent.mkdir(parents=True,exist_ok=True)
         self.broker_factory=broker_factory; self.lock=threading.RLock()
+        self.clock_checked_at=None
         with self.db() as db:
             db.executescript('''
             CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY,value TEXT NOT NULL);
@@ -116,6 +117,7 @@ class Controller:
                         raise BrokerError('An order intent has no broker record. Pause and reconcile it before resuming; automatic resubmission is disabled.')
                 clock=broker.clock()
                 with self.db() as db: self.set(db,'market_open',json.dumps(bool(clock['is_open']))); self.set(db,'next_open',clock.get('next_open',''))
+                self.mark_clock_fresh()
                 if not clock['is_open']:
                     with self.db() as db:
                         if armed and self.get(db,'schedule','false')!='true':
@@ -201,6 +203,9 @@ class Controller:
     def fail(self,error):
         with self.db() as db:
             self.set(db,'error',str(error)); self.set(db,'armed','false'); self.set(db,'schedule','false'); self.event(db,str(error))
+    def mark_clock_fresh(self):
+        # Process-local: a persisted market-open flag is not a fresh broker clock.
+        self.clock_checked_at=time.monotonic()
     def status(self):
         with self.db() as db:
             prices=json.loads(self.get(db,'prices','{}')); agents=[]
@@ -216,6 +221,7 @@ class Controller:
                  'total_pnl':equity-a['initial'] if a else None,'positions':pos,
                  'active':bool(db.execute('SELECT 1 FROM orders WHERE agent=? AND status NOT IN (?,?,?,?,?,?) LIMIT 1',(i,*TERMINAL)).fetchone())})
             return {'mode':'paper','armed':self.get(db,'armed','false')=='true','schedule':self.get(db,'schedule','false')=='true',
+             'market_clock_fresh':self.clock_checked_at is not None and time.monotonic()-self.clock_checked_at<90,
              'market_open':self.get(db,'market_open','false')=='true','next_open':self.get(db,'next_open',''),
              'error':self.get(db,'error',''),'last_quote':self.get(db,'last_quote',''),'agents':agents,
              'events':[dict(x) for x in db.execute('SELECT * FROM events ORDER BY id DESC LIMIT 30')],

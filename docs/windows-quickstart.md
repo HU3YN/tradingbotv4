@@ -1,13 +1,11 @@
 # Windows quick start
 
-These instructions cover the prepared `terrarium-windows.zip`. A GitHub clone or GitHub “Download ZIP” contains source: install Node.js 22.12+ as well, and `Setup-Windows.cmd` will build the dashboard on first setup. See [the repository quick start](../README.md#run-on-windows).
-
-The prepared ZIP includes the built dashboard. **Python 3.12, 64-bit, is the only required installation for this bundle.** Node.js is needed only if rebuilding the dashboard from source.
+Both the GitHub ZIP and the cumulative `terrarium-windows.zip` include the verified dashboard build. **Python 3.12, 64-bit, is the only required installation for a complete Windows download.** Node.js 22.12+ is needed only for frontend source changes or rebuilding an incomplete/mismatched download.
 
 1. Install Python 3.12 for Windows. Include the Python launcher (`py`) in the installer options. Python 3.12.10 is the last 3.12 release with the traditional Windows executable installer; a newer 3.12 runtime installed through Python's official install manager also works. Close and reopen any terminal after installing.
 2. Download and extract the entire Terrarium ZIP. Move the extracted `tradingbotv4` folder somewhere permanent, for example `C:\Users\hueyn\Documents\tradingbotv4`. Do not run the files from inside the ZIP.
-3. Double-click `Setup-Windows.cmd`. It creates an isolated Python environment and installs the pinned dependencies. The prepared bundle's dashboard does not need rebuilding. Wait for **Setup complete**. Internet access is required for dependency installation.
-4. Double-click `Start-Terrarium.cmd`. Wait for the Uvicorn server-started message. Leave that window open.
+3. Double-click `Start-Terrarium.cmd`. It checks this folder and runs setup automatically if its Python environment or dashboard needs repair. Internet access is required for initial dependency installation. You can also run `Setup-Windows.cmd` explicitly.
+4. Wait for the Uvicorn server-started message. Check the printed folder path and build ID; leave that window open. Do not run another Terrarium server on port 8000 at the same time.
 5. Open Edge or Chrome and type `http://127.0.0.1:8000` into the address bar. This address works on the Windows computer running the program; it is not a cloud preview link.
 6. Open **Strategy lab → Run historical tournament**. Wait for all 1,200 candidates to finish. This refreshes the bundled research through the latest completed market session. Do this before initially starting paper trading so the history passes its freshness check.
 7. In your Alpaca dashboard, switch to **Paper Trading** and obtain that paper account's API key and secret. Use a dedicated paper account with no positions or open orders for the first connection. No real-money funding is needed for this software.
@@ -38,7 +36,7 @@ The core application and dashboard were tested in Linux. The Windows launchers f
 
 The yellow residents are Mac (ground level) and Cheese (upper left branch); the blue residents are Cobalt (ground level) and Bluey (right branch fork). Click a resident to enter the desk view, then click **Free camera**. Drag to orbit in any direction, scroll or pinch to zoom, and right-drag to pan. **Return to desk view** resets the camera; **Back to the habitat** shows all four residents. Monitor backs temporarily hide if they block a resident's face during an orbit. Gentle typing is decorative; trading status and profits still come from the paper controller.
 
-All changes are included in the same cumulative `terrarium-windows.zip` download. To update an existing installation, stop the server, extract the ZIP to a temporary folder, and copy its `frontend` and `backend` folders into the existing `tradingbotv4` folder, replacing matching files. Keep your existing `data` and `reports` folders; do not replace them with the bundled starter research. Restart with `Start-Terrarium.cmd`, then press Ctrl+F5 in your browser. Setup does not need to run again. Existing agent IDs, balances, positions, and order history are retained when their names change.
+All changes are included in the same cumulative `terrarium-windows.zip` download. To update an existing installation, stop the server, extract the ZIP to a temporary folder, and copy its `frontend`, `backend`, and `scripts` folders plus `Start-Terrarium.cmd`, `Setup-Windows.cmd`, `requirements.lock`, `pyproject.toml`, and `.python-version` into the existing `tradingbotv4` folder, replacing matching files. Keep your existing `data` and `reports` folders; do not replace them with the bundled starter research. Restart with `Start-Terrarium.cmd`, then press Ctrl+F5 in your browser. The updated launcher runs setup only when needed. A new extraction is a separate installation; never copy `.venv` between computers or extracted folders. Existing agent IDs, balances, positions, and order history are retained when their names change.
 
 ## Off-duty residents
 
@@ -55,3 +53,13 @@ Back-wall droplets are distributed across the wall; there are no rendered guide 
 ## Relaxing music
 
 Click the **speaker** above the tank to play or pause. Open **Music** beside it to choose **Soft jazz** or **Quiet piano**, and adjust the volume. Both tracks are included and loop offline. Your track and volume are remembered; music starts paused when you reload the page. The old wind sound has been removed.
+
+## Startup and resting-animation repair
+
+The original GitHub source ZIP omitted the dashboard build, and the old setup skipped rebuilding whenever any `index.html` existed. Complete GitHub downloads now contain the same current dashboard as the chat bundle. Startup verifies both the source fingerprint and every built asset. It starts the backend from the folder you launched, avoiding an older editable Python installation.
+
+Close **all old Terrarium server windows** before launching the updated folder. Otherwise port 8000 may still show the old app. Press **Ctrl+F5** after starting. `/api/health` reports `dashboard_build`; it should match the ID printed by the launcher.
+
+With the market closed, wait about 5–30 seconds for staggered departures. A disconnected preview uses the server's current time in New York; saved market-open flags and previous trading errors no longer suppress it. A connected preview requires a broker clock refreshed within 90 seconds. Active orders and stale/offline status still stop resting. During regular weekday market hours the disconnected preview intentionally stays at the desks.
+
+These launchers were reviewed and the extracted distribution was tested in Linux; native Windows batch execution still needs confirmation on your machines. If startup still fails, share the printed folder path, build ID, and error text, without keys.

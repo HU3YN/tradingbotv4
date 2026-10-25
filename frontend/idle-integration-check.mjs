@@ -9,7 +9,7 @@ try{
  await page.route('**/api/state',async route=>{
   if(offline){await route.abort();return;}
   const response=await route.fetch(),state=await response.json();
-  state.market_open=open;state.credentials_present=true;state.error='';state.agents.forEach(a=>a.active=active&&a.id===0);
+  state.market_open=open;state.market_clock_fresh=true;state.credentials_present=true;state.error='';state.agents.forEach(a=>a.active=active&&a.id===0);
   await route.fulfill({response,json:state});
  });
  await page.route('**/api/start',()=>{throw Error('Animation must never start trading');});

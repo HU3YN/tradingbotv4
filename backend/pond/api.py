@@ -1,4 +1,5 @@
 import asyncio,json,os,secrets,threading
+from datetime import datetime,timezone
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI,HTTPException,Request
@@ -38,10 +39,14 @@ async def guard(request:Request,call_next):
     response.headers['Referrer-Policy']='no-referrer'
     return response
 @app.get('/api/health')
-def health(): return {'ok':True,'mode':'paper','version':'0.1.0'}
+def health():
+    try: build_id=json.loads((ROOT/'frontend/dist/build-info.json').read_text())['build']
+    except (OSError,ValueError,KeyError): build_id=None
+    return {'ok':True,'mode':'paper','version':'0.1.0','dashboard_build':build_id}
 @app.get('/api/state')
 def state():
     s=controller.status(); s['csrf']=csrf; s['research']=research.copy()
+    s['server_time']=datetime.now(timezone.utc).isoformat()
     s['credentials_present']=bool((os.getenv('ALPACA_API_KEY') or os.getenv('APCA_API_KEY_ID')) and (os.getenv('ALPACA_SECRET_KEY') or os.getenv('APCA_API_SECRET_KEY')))
     path=ROOT/'reports/tournament.json'
     s['tournament']=None
@@ -77,6 +82,7 @@ def connect(body:Credentials):
                 if bound and account['id']!=bound: raise BrokerError('This ledger is bound to a different paper account.')
                 controller.set(db,'market_open',json.dumps(bool(clock['is_open'])))
                 controller.set(db,'next_open',clock.get('next_open',''))
+            controller.mark_clock_fresh()
             return {'connected':True,'status':account['status'],'market_open':clock['is_open']}
         except BrokerError as e:
             for k,v in old.items():

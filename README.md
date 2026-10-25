@@ -35,18 +35,16 @@ The habitat is a procedural, stylized interpretation of the reference terrarium.
 For a **GitHub clone or GitHub “Download ZIP”**, install:
 
 - **Python 3.12, 64-bit**, including the Python launcher (`py`).
-- **Node.js 22.12 or newer**, including npm. Node.js 24 is also supported.
+- **Node.js 22.12 or newer is optional** for running a complete download. Install it only if you edit frontend source or need to rebuild a stale/incomplete dashboard.
 - **Git**, if you prefer cloning instead of downloading a source ZIP.
 
 Open a new terminal after installation and check:
 
 ```powershell
 py -3.12 --version
-node --version
-npm.cmd --version
 ```
 
-The separately prepared **`terrarium-windows.zip`** already contains the built dashboard, so that particular bundle needs Python but does not need Node.js unless you rebuild it. GitHub's automatically generated source ZIP does **not** contain the built dashboard.
+**Both GitHub’s “Download ZIP” and `terrarium-windows.zip` now include the same verified built dashboard.** No Node.js build is needed for a complete download. The launcher checks source and output fingerprints so an older dashboard cannot silently survive an update.
 
 ### 2. Get the project
 
@@ -59,8 +57,8 @@ Alternatively, use GitHub **Code → Download ZIP** and extract it completely. K
 
 ### 3. Install and start
 
-1. Double-click **`Setup-Windows.cmd`**. It creates the Python environment, installs the pinned dependencies, and builds the dashboard when needed. Wait for **Setup complete**. The first setup requires internet access.
-2. Double-click **`Start-Terrarium.cmd`**. Leave its server window open.
+1. Double-click **`Start-Terrarium.cmd`**. It automatically runs setup if this extracted folder has no working Python environment or has an outdated dashboard. First setup requires internet access. You can also run `Setup-Windows.cmd` explicitly.
+2. Leave the server window open. It prints the installation folder and dashboard build ID; make sure this is the folder you intended to launch. Setup performed in a different extracted folder does not install this one.
 3. Open **http://127.0.0.1:8000** in Edge or Chrome on that same computer.
 
 You should see the habitat with four residents. Profit values remain blank until a paper account and ledger have real values. Follow the first-session steps below before starting trading.
@@ -157,7 +155,7 @@ Scheduled trading refreshes historical prices when it needs a new daily plan. If
 | **Music** | Choose **Soft jazz** or **Quiet piano**, then adjust volume. Preferences are saved; playback starts paused after reload. |
 | Help icon | Read the workspace's field notes and behavior explanations. |
 
-Off-duty routines are independent and staggered. They run only while the market is closed and the resident has no active order. An open market, active order, or stale server status returns the frog to its desk. The disconnected preview uses regular New York weekday hours; confirmed holiday handling requires the broker clock.
+Off-duty routines are independent and staggered. They run only while the market is closed and the resident has no active order. An open market, active order, or stale server status returns the frog to its desk. The disconnected preview uses current server time and regular New York weekday hours, ignoring old saved market flags and trading errors. A connected preview requires a fresh broker clock; holidays and early closes follow that clock.
 
 [Full screenshot gallery: every screen, all four desks and camera views, music, mobile, and resting routines →](docs/gallery.md)
 
@@ -179,16 +177,16 @@ The application has automated tests for research and broker accounting, but auth
 git pull --ff-only
 ```
 
-On Windows, run `Setup-Windows.cmd` to refresh Python dependencies, then explicitly rebuild the frontend:
+On Windows, run the updated `Start-Terrarium.cmd`. It verifies the included dashboard and repairs missing setup automatically. If you changed frontend source locally, install Node.js and rebuild:
 
 ```powershell
 npm.cmd --prefix frontend ci
 npm.cmd --prefix frontend run build
 ```
 
-The setup launcher skips the frontend build when `frontend/dist/index.html` already exists, so the explicit rebuild is necessary after pulling dashboard changes. On macOS/Linux, rerun `bash scripts/setup.sh`, which rebuilds it. Restart the server and hard-refresh the browser with **Ctrl+F5** on Windows or **Cmd+Shift+R** on macOS.
+An existing `index.html` alone is no longer accepted: source and asset fingerprints must match. On macOS/Linux, rerun `bash scripts/setup.sh`, which rebuilds it. Restart the server and hard-refresh the browser with **Ctrl+F5** on Windows or **Cmd+Shift+R** on macOS.
 
-**From the prepared cumulative ZIP:** stop the server, extract to a temporary folder, and follow its `READ-ME-FIRST.txt`. For the current update, copy `frontend` and `backend` into the existing installation and replace matching files. Keep your existing `data`, `reports`, Python environment, and keys. The bundle already includes the built frontend.
+**From the prepared cumulative ZIP:** stop the server, extract to a temporary folder, and follow its `READ-ME-FIRST.txt`. For this startup fix, copy `frontend`, `backend`, `scripts`, `Start-Terrarium.cmd`, `Setup-Windows.cmd`, `requirements.lock`, `pyproject.toml`, and `.python-version` into the existing installation and replace matching files. Keep your existing `data`, `reports`, Python environment, and keys. The bundle already includes the built frontend.
 
 Local market data, research reports, credentials, and the paper ledger are excluded from Git. Normal pulls retain them. Do not run cleanup commands that erase ignored files: those files include your ledger.
 
@@ -200,7 +198,7 @@ Local market data, research reports, credentials, and the paper ledger are exclu
 | `npm` not found or setup cannot build | Install Node.js 22.12+ and reopen the terminal. Use `npm.cmd` in PowerShell. |
 | Port 8000 is already in use | Check whether another Terrarium server is still running. Use one server instance per ledger. |
 | Page does not open | Keep the server window open; use `http://127.0.0.1:8000` on that same computer. |
-| Old dashboard after an update | Rebuild source installs, restart the server, then hard-refresh the browser. |
+| Old dashboard or no resting routines after an update | Close old server windows, run the updated launcher from the intended folder, and press Ctrl+F5. The launcher checks the build. Resting begins after a short staggered delay while the market is closed. |
 | Market closed | Enable the daily schedule after connecting; wait for the next exchange session. |
 | Connection rejected | Verify paper-mode keys, account status, and that the ledger belongs to that account. |
 | Historical download or freshness error | Check internet/provider availability; rerun the lab and read the error before starting. |
@@ -226,6 +224,8 @@ node --test frontend/idle-behavior.test.mjs frontend/resident-life.test.mjs fron
 # Browser checks against the running production server
 node frontend/browser-check.mjs
 node frontend/music-check.mjs
+# Against a separate server running an extracted Git archive:
+TERRARIUM_URL=http://127.0.0.1:8001 node frontend/distribution-check.mjs
 ```
 
 On Windows, use `.venv\Scripts\python.exe -m pytest -q` for the backend tests. Browser checks default to `/usr/bin/chromium`; the checks above accept `CHROMIUM_EXECUTABLE` to select your installed Chromium executable. The general browser check expects a completed historical tournament.
@@ -250,4 +250,4 @@ On Windows, use `.venv\Scripts\pond.exe` and `.venv\Scripts\python.exe`. The gen
 | `docs/` | Operating guides, research notes, results, and the current screenshot gallery. |
 | `data/` and `reports/` | Locally generated state and research artifacts; excluded from source control. |
 
-After building the frontend and generating the research files referenced by the packager, `python scripts/package_windows.py` recreates the single cumulative `terrarium-windows.zip` beside the project folder. It excludes credentials and the paper ledger. GitHub stores the source and current documentation screenshots; caches, build output, temporary captures, and redundant update archives are not committed.
+After building the frontend and generating the research files referenced by the packager, `python scripts/package_windows.py` recreates the single cumulative `terrarium-windows.zip` beside the project folder. It excludes credentials and the paper ledger. GitHub stores the source and current documentation screenshots; caches, temporary captures, and redundant update archives are not committed. The verified `frontend/dist` build is intentionally committed so GitHub downloads work without Node.js. After changing frontend source, run the build and commit the updated build files too.

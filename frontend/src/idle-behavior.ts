@@ -45,3 +45,12 @@ export class IdleDirector {
   return this.residents;
  }
 }
+
+/** Decide decorative resting separately from persisted trading error/state. */
+export function offDutyAllowed(state:{credentials_present:boolean;market_open:boolean;market_clock_fresh?:boolean;server_time?:string},fallbackNow=new Date()):boolean {
+ if(state.credentials_present)return state.market_clock_fresh===true&&!state.market_open;
+ // A disconnected ledger can retain Friday's open flag or a past trading error.
+ // Use current server time for preview, never that saved flag or the laptop's timezone.
+ const now=state.server_time?new Date(state.server_time):fallbackNow;
+ return Number.isFinite(now.getTime())&&outsideRegularSession(now);
+}

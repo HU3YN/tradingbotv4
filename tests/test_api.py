@@ -42,3 +42,25 @@ def test_credential_values_are_never_in_state(tmp_path,monkeypatch):
     result=c.get('/api/state')
     assert 'test-secret-key' not in result.text
     assert 'test-secret-value' not in result.text
+
+
+def test_restart_does_not_treat_persisted_market_clock_as_fresh(tmp_path,monkeypatch):
+    import pond.trading as trading
+    from datetime import datetime, timezone
+    c=client(tmp_path,monkeypatch)
+    controller=api.controller
+    with controller.db() as db:
+        controller.set(db,'market_open','true')
+        controller.set(db,'error','Old trading error')
+    status=c.get('/api/state').json()
+    assert status['market_open'] is True
+    assert status['market_clock_fresh'] is False
+    assert abs((datetime.now(timezone.utc)-datetime.fromisoformat(status['server_time'])).total_seconds())<5
+    monkeypatch.setattr(trading.time,'monotonic',lambda:100.)
+    controller.mark_clock_fresh()
+    assert c.get('/api/state').json()['market_clock_fresh'] is True
+    monkeypatch.setattr(trading.time,'monotonic',lambda:191.)
+    assert c.get('/api/state').json()['market_clock_fresh'] is False
+    restored=Controller(controller.path)
+    assert restored.status()['market_open'] is True
+    assert restored.status()['market_clock_fresh'] is False

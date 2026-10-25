@@ -6,4 +6,5 @@ if [[ ! -f frontend/dist/index.html ]]; then
   printf '%s\n' 'Build the dashboard first: bash scripts/setup.sh' >&2
   exit 1
 fi
-exec .venv/bin/python -m uvicorn pond.api:app --host 127.0.0.1 --port 8000 --no-access-log
+.venv/bin/python scripts/check_frontend.py || { printf "%s\n" "Rebuild this checkout: bash scripts/setup.sh"; exit 1; }
+exec .venv/bin/python -m uvicorn pond.api:app --app-dir backend --host 127.0.0.1 --port 8000 --no-access-log

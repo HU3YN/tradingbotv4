@@ -27,6 +27,8 @@ Automatic startup after a Windows reboot is a separate, optional step using Task
 - **Browser cannot connect:** keep the server window open, check for errors, and verify you used port 8000 on the same computer.
 - **Port already in use:** another Terrarium server may already be running; do not start multiple instances.
 - **Alpaca rejects the connection:** verify that the key and secret belong to the paper account and that the account is active. Never send the key values when reporting an error.
+- **HTTP 401 / Reconnect paper account:** Alpaca rejected the credentials. Open Alpaca's **Paper Trading** dashboard, copy the matching API key and secret into Terrarium's **Connection & settings**, and connect again. If you regenerated keys, update both values; live-account keys will not work. Keys entered in the app last only until the server closes. After a successful connection, click **Start paper trading** or enable the daily schedule again. Reconnecting alone does not restart trading. Keep the existing account and local ledger; do not reset them to fix a key error.
+- **DBC (or another ETF): waiting for a fresh IEX market price:** the included IEX feed may have sparse ETF trades, especially near the opening bell. Terrarium accepts a recent trade or minute-bar close, both within five minutes. If neither is available, it holds new orders and retries each controller cycle (about 20 seconds plus request time). Your existing Start/schedule choice remains enabled; **Pause residents** still stops it. Old daily prices are never substituted. If this persists, check Alpaca's market-data status and IEX coverage. Refreshing the research tournament does not repair live IEX prices. Portfolio values keep their last valuation timestamp until prices recover.
 - **Market closed:** this is expected outside regular sessions and on exchange holidays. Use the daily schedule to wait for the next opening.
 - **Historical-data request fails:** keep the previous report and share the displayed error. The app does not substitute generated prices for missing history.
 
@@ -43,6 +45,8 @@ All changes are included in the same cumulative `terrarium-windows.zip` download
 When the market is closed and a resident has no active order, that frog may randomly nap in its chair, stand and stretch, drink its coffee, or hop on all fours to catch tiny flightless fruit flies. Each frog has an independent schedule; departures are staggered and at least one remains at a desk. Ground residents take turns hunting on the central leaf litter; branch residents hunt on their supporting wood. Other routines can overlap independently. The camera and name bubble follow a hunting resident.
 
 These are decorative routines. They do not change profits, orders, or strategy signals. An open market, an active order for that frog, or lost/stale server status returns it to the desk. Without a connected broker, the preview permits routines only outside regular weekday US market hours using New York time; special holidays and early closes require the broker clock.
+
+During an open session, frogs stay at their desks even while waiting for prices or for you to start trading. A quiet frog is not evidence of a failed render; check the connection notice and Trading journal for the actual trading state. Repeated identical connection errors are logged once until the error changes, so they do not bury useful events.
 
 ## Graphics and camera performance
 

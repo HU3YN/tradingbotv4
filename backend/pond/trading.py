@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal,ROUND_DOWN
 from zoneinfo import ZoneInfo
 from .data import ROOT,SYMBOLS,load_market,fetch_yahoo
-from .broker import Alpaca,BrokerError
+from .broker import Alpaca,BrokerError,AuthenticationError,MarketDataUnavailable
 from .strategies import Candidate,SignalFactory
 
 NAMES=['Mac','Cobalt','Cheese','Bluey']
@@ -59,7 +59,7 @@ class Controller:
                             db.execute('INSERT INTO agents VALUES (?,?,?,?,?)',(i,NAMES[i],budget,budget,json.dumps(cfg)))
                         self.set(db,'report_hash',digest); self.set(db,'account_id',account['id'])
                     elif self.get(db,'account_id')!=account['id']: raise BrokerError('Connected account differs from the account bound to the local ledger.')
-                    self.set(db,'armed','true'); self.set(db,'schedule',json.dumps(schedule)); self.set(db,'error','')
+                    self.set(db,'armed','true'); self.set(db,'schedule',json.dumps(schedule)); self.set(db,'error',''); self.set(db,'error_kind',''); self.set(db,'data_warning','')
                     self.set(db,'manual_session',datetime.fromisoformat(clock['timestamp'].replace('Z','+00:00')).astimezone(ZoneInfo('America/New_York')).date().isoformat())
                     self.event(db,'Daily paper schedule enabled' if schedule else 'Paper agents started')
             finally: broker.close()
@@ -120,6 +120,7 @@ class Controller:
                 self.mark_clock_fresh()
                 if not clock['is_open']:
                     with self.db() as db:
+                        self.set(db,'data_warning','')
                         if armed and self.get(db,'schedule','false')!='true':
                             self.set(db,'armed','false'); self.event(db,'Market closed; manual session finished.')
                     return
@@ -128,7 +129,8 @@ class Controller:
                     if has_agents:
                         prices=broker.prices(SYMBOLS)
                         with self.db() as db:
-                            self.set(db,'prices',json.dumps(prices)); self.set(db,'last_quote',clock['timestamp'])
+                            if self.get(db,'data_warning',''): self.event(db,'Fresh IEX prices received; market-data wait cleared.')
+                            self.set(db,'prices',json.dumps(prices)); self.set(db,'last_quote',clock['timestamp']); self.set(db,'data_warning','')
                     return
                 session=datetime.fromisoformat(clock['timestamp'].replace('Z','+00:00')).astimezone(ZoneInfo('America/New_York')).date().isoformat()
                 with self.db() as db:
@@ -148,7 +150,8 @@ class Controller:
                     agents=[dict(a) for a in db.execute('SELECT * FROM agents')]
                 prices=broker.prices(SYMBOLS)
                 with self.db() as db:
-                    self.set(db,'prices',json.dumps(prices)); self.set(db,'last_quote',clock['timestamp'])
+                    if self.get(db,'data_warning',''): self.event(db,'Fresh IEX prices received; market-data wait cleared.')
+                    self.set(db,'prices',json.dumps(prices)); self.set(db,'last_quote',clock['timestamp']); self.set(db,'data_warning','')
                 need_plan=False
                 with self.db() as db: need_plan=db.execute('SELECT COUNT(*) FROM plans WHERE session=?',(session,)).fetchone()[0]!=4
                 if need_plan:
@@ -202,7 +205,16 @@ class Controller:
             finally: broker.close()
     def fail(self,error):
         with self.db() as db:
-            self.set(db,'error',str(error)); self.set(db,'armed','false'); self.set(db,'schedule','false'); self.event(db,str(error))
+            if isinstance(error,MarketDataUnavailable):
+                # No order submission has begun when this read-only check fails.
+                # Retain only existing authorization; Pause still disarms it.
+                if self.get(db,'data_warning','')!=str(error): self.event(db,str(error))
+                self.set(db,'data_warning',str(error))
+                return
+            if isinstance(error,AuthenticationError): self.clock_checked_at=None
+            if self.get(db,'error','')!=str(error): self.event(db,str(error))
+            self.set(db,'error',str(error)); self.set(db,'error_kind','authentication' if isinstance(error,AuthenticationError) else 'trading')
+            self.set(db,'data_warning',''); self.set(db,'armed','false'); self.set(db,'schedule','false')
     def mark_clock_fresh(self):
         # Process-local: a persisted market-open flag is not a fresh broker clock.
         self.clock_checked_at=time.monotonic()
@@ -223,6 +235,6 @@ class Controller:
             return {'mode':'paper','armed':self.get(db,'armed','false')=='true','schedule':self.get(db,'schedule','false')=='true',
              'market_clock_fresh':self.clock_checked_at is not None and time.monotonic()-self.clock_checked_at<90,
              'market_open':self.get(db,'market_open','false')=='true','next_open':self.get(db,'next_open',''),
-             'error':self.get(db,'error',''),'last_quote':self.get(db,'last_quote',''),'agents':agents,
+             'error':self.get(db,'error',''),'error_kind':self.get(db,'error_kind',''),'data_warning':self.get(db,'data_warning',''),'last_quote':self.get(db,'last_quote',''),'agents':agents,
              'events':[dict(x) for x in db.execute('SELECT * FROM events ORDER BY id DESC LIMIT 30')],
              'orders':[dict(x) for x in db.execute('SELECT * FROM orders ORDER BY created DESC LIMIT 30')]}

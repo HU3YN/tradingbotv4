@@ -43,7 +43,7 @@ def main():
 This ZIP includes the latest application and all previous habitat changes.
 Future releases replace this same terrarium-windows.zip download.
 
-EXISTING INSTALLATION - SEPARATE SETUP AND DESKTOP RESTING FIX:
+EXISTING INSTALLATION - UPDATE WITHOUT REPLACING YOUR LEDGER:
 1. Close the Terrarium server window.
 2. Extract this ZIP to a temporary folder.
 3. Copy frontend, backend, and scripts plus Setup-Windows.cmd,
@@ -55,6 +55,10 @@ EXISTING INSTALLATION - SEPARATE SETUP AND DESKTOP RESTING FIX:
    Start only launches the server. It never runs Setup, pip, or npm.
    Reconnect paper keys after restarting. Do not copy a .venv from another folder
    or computer. Close old server windows so port 8000 serves this installation.
+6. HTTP 401 means Alpaca rejected the credentials: reconnect the matching PAPER
+   key and secret in Connection & settings, then Start or enable the schedule.
+   Temporary stale IEX prices now wait and retry without disabling an already
+   started session. No new orders are placed until prices are fresh.
 
 FIRST INSTALLATION:
 Extract the whole tradingbotv4 folder, install Python 3.12 with its Windows

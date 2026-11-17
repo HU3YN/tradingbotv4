@@ -2,7 +2,7 @@ from pathlib import Path
 import json
 import pytest
 from pond.trading import Controller
-from pond.broker import BrokerError,PAPER_URL
+from pond.broker import BrokerError,PAPER_URL,MarketDataUnavailable,AuthenticationError
 from pond.strategies import Candidate
 from pond.data import synthetic_market
 
@@ -131,3 +131,47 @@ def test_fill_average_price_correction_is_idempotent(tmp_path):
     with c.db() as db:
         assert db.execute('SELECT cash FROM agents').fetchone()[0]==798
         assert db.execute('SELECT cost FROM positions').fetchone()[0]==202
+
+
+@pytest.mark.parametrize('schedule',[False,True])
+def test_quote_gap_waits_then_recovers_without_orders_or_duplicate_events(setup,schedule):
+    c,b=setup;c.start(schedule=schedule)
+    good_prices=b.prices
+    def missing(symbols): raise MarketDataUnavailable('DBC: waiting for fresh prices')
+    b.prices=missing
+    for _ in range(3):
+        try: c.tick()
+        except BrokerError as error: c.fail(error)
+    status=c.status()
+    assert status['armed'] and status['schedule']==schedule
+    assert status['data_warning'] and not status['error']
+    assert not b.submissions and not status['orders'] and not status['last_quote']
+    assert sum(e['message']=='DBC: waiting for fresh prices' for e in status['events'])==1
+    b.prices=good_prices;c.tick()
+    assert not c.status()['data_warning'] and len(b.submissions)==4
+    assert any(e['message']=='Fresh IEX prices received; market-data wait cleared.' for e in c.status()['events'])
+    c.tick();assert len(b.submissions)==4
+
+
+def test_pause_during_quote_wait_never_rearms_on_recovery(setup):
+    c,b=setup;c.start(schedule=True)
+    c.fail(MarketDataUnavailable('waiting'));c.stop();c.tick()
+    assert not c.status()['armed'] and not c.status()['schedule']
+    assert not c.status()['data_warning'] and not b.submissions
+
+
+def test_auth_failure_disarms_and_invalidates_clock_without_event_spam(setup):
+    c,b=setup;c.start(schedule=True);c.mark_clock_fresh()
+    for _ in range(3):c.fail(AuthenticationError('Reconnect paper keys'))
+    status=c.status()
+    assert not status['armed'] and not status['schedule'] and not status['market_clock_fresh']
+    assert status['error_kind']=='authentication'
+    assert sum(e['message']=='Reconnect paper keys' for e in status['events'])==1
+    assert not b.submissions
+
+
+def test_quote_wait_does_not_clear_hard_failure_or_authorize_trading(setup):
+    c,b=setup;c.start();c.fail(BrokerError('Reconciliation required'))
+    c.fail(MarketDataUnavailable('waiting'));c.tick()
+    assert c.status()['error']=='Reconciliation required'
+    assert not c.status()['armed'] and not b.submissions

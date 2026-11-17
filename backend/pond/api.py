@@ -17,7 +17,7 @@ research={'running':False,'completed':0,'total':1200,'error':''}; research_lock=
 async def loop():
     while True:
         try: await asyncio.to_thread(controller.tick)
-        except Exception as e: controller.fail(str(e) if isinstance(e,(BrokerError,ValueError)) else f'Controller stopped: {type(e).__name__}')
+        except Exception as e: controller.fail(e if isinstance(e,(BrokerError,ValueError)) else f'Controller stopped: {type(e).__name__}')
         await asyncio.sleep(20)
 @asynccontextmanager
 async def lifespan(app):
@@ -72,7 +72,7 @@ def connect(body:Credentials):
     with controller.lock:
         if controller.status()['armed']: raise HTTPException(409,'Pause trading before changing credentials.')
         old={k:os.environ.get(k) for k in ['ALPACA_API_KEY','ALPACA_SECRET_KEY']}
-        os.environ['ALPACA_API_KEY']=body.key; os.environ['ALPACA_SECRET_KEY']=body.secret
+        os.environ['ALPACA_API_KEY']=body.key.strip(); os.environ['ALPACA_SECRET_KEY']=body.secret.strip()
         try:
             broker=Alpaca()
             try: account=broker.account(); clock=broker.clock()
@@ -82,6 +82,9 @@ def connect(body:Credentials):
                 if bound and account['id']!=bound: raise BrokerError('This ledger is bound to a different paper account.')
                 controller.set(db,'market_open',json.dumps(bool(clock['is_open'])))
                 controller.set(db,'next_open',clock.get('next_open',''))
+                if controller.get(db,'error_kind')=='authentication':
+                    controller.set(db,'error',''); controller.set(db,'error_kind','')
+                controller.event(db,'Paper account connection verified. Click Start or enable the daily schedule to trade.')
             controller.mark_clock_fresh()
             return {'connected':True,'status':account['status'],'market_open':clock['is_open']}
         except BrokerError as e:

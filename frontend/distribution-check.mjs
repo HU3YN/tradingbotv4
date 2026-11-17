@@ -15,9 +15,14 @@ try{
   const response=await route.fetch(),state=await response.json();
   state.server_time=['weekday','stale-weekday'].includes(scenario)?'2026-10-26T15:00:00Z':'2026-10-24T16:00:00Z';
   state.credentials_present=!['disconnected','weekday'].includes(scenario);
-  state.market_clock_fresh=!['disconnected','stale','stale-weekday','weekday'].includes(scenario);
-  state.market_open=['disconnected','open'].includes(scenario); // Saved Friday open flag on restart.
+  state.market_clock_fresh=!['disconnected','stale','stale-weekday','weekday','auth'].includes(scenario);
+  state.market_open=['disconnected','open','waiting','recovered'].includes(scenario); // Saved Friday open flag on restart.
   state.error='Previous session error';
+  state.error_kind=scenario==='auth'?'authentication':'';
+  if(scenario==='auth')state.error='Alpaca rejected the API credentials (HTTP 401). Open Connection & settings and reconnect.';
+  state.data_warning=scenario==='waiting'?'DBC: waiting for a fresh IEX market price; retrying automatically.':'';
+  state.armed=['waiting','recovered'].includes(scenario);
+  if(state.armed)state.error='';
   state.agents.forEach(a=>a.active=scenario==='active'&&a.id===0);
   await route.fulfill({response,json:state});
  });
@@ -36,6 +41,14 @@ try{
  scenario='stale';await anyRest();await page.waitForFunction(()=>document.querySelector('#resident-context').textContent==='Off hours · routines enabled');console.log('Desktop with stored keys and stale closed clock now animates like the disconnected laptop.');
  scenario='stale-weekday';await allDesk();await page.waitForFunction(()=>document.querySelector('#resident-context').textContent==='Waiting for the market clock');console.log('Active orders and unknown weekday sessions still block resting.');
  scenario='weekday';await page.waitForFunction(()=>document.querySelector('#resident-context').textContent==='Market hours · at the desks');await allDesk();
+ scenario='auth';await page.waitForFunction(()=>document.querySelector('#market-status').textContent==='Reconnect paper account');
+ await page.locator('#trade-button').click();assert.equal(await page.locator('#settings-dialog').isVisible(),true);
+ await page.locator('#settings-dialog .dialog-close').click();
+ scenario='waiting';await page.waitForFunction(()=>document.querySelector('#scene-mode-text').textContent==='Waiting for fresh prices · no new orders');
+ assert.match(await page.locator('#connection-banner').textContent(),/DBC.*retrying/);
+ assert.match(await page.locator('#trade-button').textContent(),/Pause residents/);await allDesk();
+ scenario='recovered';await page.waitForFunction(()=>document.querySelector('#scene-mode-text').textContent==='Paper agents watching the market');
+ console.log('401 reconnect control, fresh-price waiting notice, and recovery passed without trading mutations.');
  scenario='disconnected';await anyRest();
  offline=true;await allDesk();console.log('Weekday preview and offline state block rest; weekend preview recovers.');
  await page.setViewportSize({width:390,height:844});

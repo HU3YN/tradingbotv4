@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "build": "0162c2f9a37e",
+  "build": "ff320d363d32",
   "sources": {
     "index.html": "ed47113e371faf3189975a32f190e87d5890511588bddaf0494981c79f763c63",
     "package-lock.json": "e59f93bb0c14174408374c5204b4f9fe401329d870eeab16eb0c70dc397eaf6d",
@@ -11,7 +11,7 @@
     "scripts/stamp-build.mjs": "002355eb23a0680ed5ea1697fc5814b0e464b3021d8a5a263d6f9d7f9aa1f754",
     "src/habitat-layout.ts": "80517ca65879496d54ca1aed02a4a00abe8a63596a509b0d5395e3614ad75142",
     "src/idle-behavior.ts": "eec051673e6f780c8fdf1e99bd72d9c9e6047f3e4e5abd24cfe290aff2fe0e62",
-    "src/main.ts": "a5afde55a001a6cba19a767980c2e958e5a00c36eae9a014ba0cf70f43f27300",
+    "src/main.ts": "6f72a95a307b1069d7346576c5410c7e31026c87388a6d85122eaa75a53a052d",
     "src/music.ts": "7672dddcda67a535bd26bb9f0dd8ca9f5b275161d88bcd9c427f7b595cffdcd4",
     "src/render-budget.ts": "87723264a4f7ce3baf506722b50e9109b82eb49fc1c0830b282bcc92192f2e9c",
     "src/resident-life.ts": "a74ef4427831cf3ed2b562a364f5feb71e057828e7655343516e361b9649f642",
@@ -36,7 +36,7 @@
     "assets/dm-sans-latin-ext-600-normal-4vooXBpG.woff2": "6406eb05e2eb50779cb95ee8745c98ad23cce7e67d752822782453da7f6b4491",
     "assets/dm-sans-latin-ext-600-normal-DRtaDpgU.woff": "f70e6bb2170e2ab7bfc23a021af0663dce4df0b502173c9c5135015d7fed457a",
     "assets/index-3WLnWID4.css": "1d54f17a3fd90e1399426877f38abaeda7852a7cdc4738f728abc420ca035b63",
-    "assets/index-DCPbYwF2.js": "d51fbfeb105139478286e648e6535f820c62ff126fa13f6d948c868dd7040b72",
+    "assets/index-CrJ1C5Kd.js": "74a85713df65022b20e5bdc4e07f448bc8d367bc888533d449596db535c9adfe",
     "assets/manrope-cyrillic-400-normal-BMzJvInZ.woff2": "5a987d1484070f1ea54de7c10ebfa4057a18e379361dbe5fd5c4fa4c2d95ef39",
     "assets/manrope-cyrillic-400-normal-Dvx59UGC.woff": "377eaffaf00d2fe381870f08f098e3ad266618253c9d4197647b89816784e49c",
     "assets/manrope-cyrillic-600-normal-DvRl3Mj-.woff2": "80b86efbef1c9fb66557cc4cc7b6db42db2fd631f1a9b8735f3bbefbb5128799",
@@ -70,6 +70,6 @@
     "assets/music/quiet-piano.mp3": "4184a289fd408567b574c7bfbf03e1307c72b4744c6c10e50b821e0cfb3ac3f1",
     "assets/music/soft-jazz.mp3": "7f63f62e89ddf5df633efb6944ce9dce27312e919a518966aabbd06179aee6f2",
     "favicon.svg": "58ea041e4ff098cb61d7f26d7f00938b0e868cb875338d3897fdf72603e42656",
-    "index.html": "d22f8a2e5499eeed5682ecd922ec624ee4e0e751cc8c8023365dd3027da2b497"
+    "index.html": "5df456b38097aacab84c27672fe93eb1f8470d5fcce15166c668161d7d33e969"
   }
 }

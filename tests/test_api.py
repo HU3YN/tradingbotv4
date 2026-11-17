@@ -64,3 +64,43 @@ def test_restart_does_not_treat_persisted_market_clock_as_fresh(tmp_path,monkeyp
     restored=Controller(controller.path)
     assert restored.status()['market_open'] is True
     assert restored.status()['market_clock_fresh'] is False
+
+
+def test_reconnect_clears_only_auth_error_and_does_not_restart_trading(tmp_path,monkeypatch):
+    from pond.broker import AuthenticationError,BrokerError
+    monkeypatch.setenv('ALPACA_API_KEY','previous-test-key')
+    monkeypatch.setenv('ALPACA_SECRET_KEY','previous-test-secret')
+    c=client(tmp_path,monkeypatch)
+    class Connection:
+        def account(self):return {'id':'paper-test','status':'ACTIVE'}
+        def clock(self):return {'is_open':True}
+        def close(self):pass
+    monkeypatch.setattr(api,'Alpaca',Connection)
+    token=c.get('/api/state').json()['csrf']
+    for failure,expected in [(AuthenticationError('Bad keys'),''),(BrokerError('Reconcile orders'),'Reconcile orders')]:
+        api.controller.fail(failure)
+        r=c.post('/api/connect',headers={'X-Terrarium-Token':token},json={'key':' paper-test-key ','secret':' paper-test-secret '})
+        assert r.status_code==200
+        s=c.get('/api/state').json()
+        assert s['error']==expected and not s['armed'] and not s['schedule']
+        assert s['market_clock_fresh']
+
+
+def test_background_loop_preserves_retryable_error_type(monkeypatch):
+    import asyncio
+    from pond.broker import MarketDataUnavailable
+    failure=MarketDataUnavailable('Waiting for DBC')
+    received=[]
+    class WaitingController:
+        def tick(self):raise failure
+        def fail(self,error):received.append(error)
+    async def end_cycle(seconds):
+        assert seconds==20
+        raise asyncio.CancelledError
+    monkeypatch.setattr(api,'controller',WaitingController())
+    monkeypatch.setattr(api.asyncio,'sleep',end_cycle)
+    async def run():
+        try:await api.loop()
+        except asyncio.CancelledError:pass
+    asyncio.run(run())
+    assert received==[failure]

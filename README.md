@@ -201,6 +201,8 @@ Local market data, research reports, credentials, and the paper ledger are exclu
 | Old dashboard or no resting routines after an update | Close old server windows, run the updated launcher from the intended folder, and press Ctrl+F5. Check the status below **Residents at work**. Off-hours preview works even if saved API credentials have no fresh broker clock. Use Setup separately to verify a copied build. |
 | Market closed | Enable the daily schedule after connecting; wait for the next exchange session. |
 | Connection rejected | Verify paper-mode keys, account status, and that the ledger belongs to that account. |
+| HTTP 401 / Reconnect paper account | Reconnect the matching key and secret from Alpaca **Paper Trading** in Connection & settings, then click Start or enable the schedule again. Reconnecting alone does not resume trading. Keep your existing ledger. |
+| DBC or another ETF is waiting for fresh prices | IEX ETF updates can be sparse. New orders wait while the controller retries; an already-started session remains enabled. It accepts fresh trades or minute-bar closes within five minutes, never old daily prices. Check Alpaca's data status/coverage if this persists. |
 | Historical download or freshness error | Check internet/provider availability; rerun the lab and read the error before starting. |
 | Residents are watching but not trading | Check the strategy's rebalance day, existing holdings, and journal. No new target can mean no order. |
 | Position mismatch or uncertain order outcome | Pause, inspect Alpaca's orders/positions and the journal, and reconcile. Keep the ledger intact. |
